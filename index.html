@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ระบบลงทะเบียนและประเมินความเสี่ยงสุขภาพเบื้องต้น</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <style>
+    /* ============================================================
+       BASE RESET & ROOT VARIABLES
+    ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #1976d2;
+      --primary-dark: #115293;
+      --primary-light: #e3f2fd;
+      --secondary: #9c27b0;
+      --success: #2e7d32;
+      --success-bg: #e8f5e9;
+      --warning: #e65100;
+      --warning-bg: #fff3e0;
+      --error: #c62828;
+      --error-bg: #ffebee;
+      --bg: #f5f7fa;
+      --surface: #ffffff;
+      --text-primary: #212121;
+      --text-secondary: #616161;
+      --border: #e0e0e0;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,.12), 0 1px 2px rgba(0,0,0,.08);
+      --shadow-md: 0 4px 6px rgba(0,0,0,.1), 0 2px 4px rgba(0,0,0,.06);
+      --shadow-lg: 0 10px 25px rgba(0,0,0,.12), 0 4px 10px rgba(0,0,0,.08);
+      --radius: 12px;
+      --radius-sm: 8px;
+      --transition: .25s cubic-bezier(.4,0,.2,1);
+    }
+
+    body {
+      font-family: 'Sarabun', sans-serif;
+      background: var(--bg);
+      color: var(--text-primary);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* ============================================================
+       HEADER / APP BAR
+    ============================================================ */
+    .app-bar {
+      background: linear-gradient(135deg, var(--primary) 0%, #1565c0 100%);
+      color: #fff;
+      padding: 0 24px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: var(--shadow-md);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .app-bar .icon { font-size: 32px; }
+    .app-bar h1 { font-size: 1.1rem; font-weight: 600; line-height: 1.3; }
+    .app-bar small { font-size: .75rem; opacity: .85; display: block; }
+
+    /* ============================================================
+       CONTAINER / LAYOUT
+    ============================================================ */
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 32px 16px 64px;
+    }
+
+    /* Paper */
+    .paper {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      padding: 28px 32px;
+      margin-bottom: 24px;
+      border: 1px solid var(--border);
+      transition: box-shadow var(--transition);
+    }
+    .paper:hover { box-shadow: var(--shadow-md); }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--primary-light);
+    }
+    .section-title .material-icons { font-size: 22px; }
+
+    /* ============================================================
+       GRID
+    ============================================================ */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+    @media (max-width: 600px) {
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .paper { padding: 20px 16px; }
+      .app-bar h1 { font-size: .95rem; }
+    }
+
+    /* Stack */
+    .stack { display: flex; flex-direction: column; gap: 16px; }
+    .stack-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+    /* ============================================================
+       FORM ELEMENTS – TEXT FIELD
+    ============================================================ */
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-label {
+      font-size: .875rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .form-label .req { color: var(--error); }
+
+    .text-field {
+      position: relative;
+    }
+    .text-field input, .text-field select {
+      width: 100%;
+      padding: 12px 16px;
+      font-size: 1rem;
+      font-family: 'Sarabun', sans-serif;
+      border: 2px solid var(--border);
+      border-radius: var(--radius-sm);
+      outline: none;
+      background: #fafafa;
+      color: var(--text-primary);
+      transition: border-color var(--transition), background var(--transition), box-shadow var(--transition);
+      -webkit-appearance: none;
+    }
+    .text-field input:focus, .text-field select:focus {
+      border-color: var(--primary);
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(25,118,210,.12);
+    }
+    .text-field input.error, .text-field select.error {
+      border-color: var(--error);
+      background: #fff8f8;
+    }
+    .text-field input.error:focus, .text-field select.error:focus {
+      box-shadow: 0 0 0 3px rgba(198,40,40,.12);
+    }
+    .helper-text {
+      font-size: .78rem;
+      color: var(--text-secondary);
+      min-height: 18px;
+    }
+    .helper-text.error { color: var(--error); }
+    .helper-text.error::before { content: "⚠ "; }
+
+    /* ============================================================
+       RADIO GROUP
+    ============================================================ */
+    .radio-group { display: flex; flex-direction: column; gap: 8px; }
+    .radio-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border: 2px solid var(--border);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all var(--transition);
+      font-size: .95rem;
+      background: #fafafa;
+    }
+    .radio-label:hover { border-color: var(--primary); background: var(--primary-light); }
+    .radio-label input[type="radio"] { accent-color: var(--primary); width: 18px; height: 18px; cursor: pointer; }
+    .radio-label.selected { border-color: var(--primary); background: var(--primary-light); font-weight: 600; }
+    .radio-group-row { display: flex; flex-direction: row; gap: 8px; flex-wrap: wrap; }
+    .radio-group-row .radio-label { flex: 1; min-width: 140px; }
+
+    /* ============================================================
+       SELECT MENU
+    ============================================================ */
+    .text-field select { cursor: pointer; }
+    .select-wrap { position: relative; }
+    .select-wrap::after {
+      content: "▾";
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+      color: var(--text-secondary);
+    }
+
+    /* ============================================================
+       BUTTONS
+    ============================================================ */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 28px;
+      font-size: 1rem;
+      font-family: 'Sarabun', sans-serif;
+      font-weight: 600;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all var(--transition);
+      letter-spacing: .3px;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary) 0%, #1565c0 100%);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(25,118,210,.35);
+    }
+    .btn-primary:hover { box-shadow: 0 6px 18px rgba(25,118,210,.45); transform: translateY(-1px); }
+    .btn-outlined {
+      background: #fff;
+      color: var(--primary);
+      border: 2px solid var(--primary);
+    }
+    .btn-outlined:hover { background: var(--primary-light); }
+    .btn-danger {
+      background: #fff;
+      color: var(--error);
+      border: 2px solid var(--error);
+    }
+    .btn-danger:hover { background: var(--error-bg); }
+    .btn-lg { padding: 14px 36px; font-size: 1.05rem; }
+    .btn-sm { padding: 8px 18px; font-size: .875rem; }
+
+    /* ============================================================
+       ALERT
+    ============================================================ */
+    .alert {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 14px 18px;
+      border-radius: var(--radius-sm);
+      font-size: .9rem;
+      border-left: 4px solid;
+      animation: slideIn .3s ease;
+    }
+    @keyframes slideIn { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+    .alert-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+    .alert-info { background: #e3f2fd; border-color: var(--primary); color: #0d47a1; }
+    .alert-success { background: var(--success-bg); border-color: var(--success); color: #1b5e20; }
+    .alert-warning { background: var(--warning-bg); border-color: var(--warning); color: #bf360c; }
+    .alert-error { background: var(--error-bg); border-color: var(--error); color: #b71c1c; }
+
+    /* ============================================================
+       CHIP
+    ============================================================ */
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: .85rem;
+      font-weight: 600;
+      cursor: default;
+    }
+    .chip-low { background: var(--success-bg); color: var(--success); border: 1.5px solid #a5d6a7; }
+    .chip-moderate { background: var(--warning-bg); color: var(--warning); border: 1.5px solid #ffcc80; }
+    .chip-high { background: var(--error-bg); color: var(--error); border: 1.5px solid #ef9a9a; }
+    .chip .material-icons { font-size: 16px; }
+
+    /* ============================================================
+       DIALOG / MODAL
+    ============================================================ */
+    .dialog-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.5);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      animation: fadeIn .2s ease;
+    }
+    @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+    .dialog {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      max-width: 560px;
+      width: 100%;
+      animation: popIn .25s cubic-bezier(.34,1.56,.64,1);
+      overflow: hidden;
+    }
+    @keyframes popIn { from { opacity:0; transform:scale(.92); } to { opacity:1; transform:scale(1); } }
+    .dialog-title {
+      padding: 20px 24px 16px;
+      font-size: 1.2rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .dialog-content { padding: 0 24px 20px; }
+    .dialog-actions {
+      padding: 12px 24px 20px;
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ============================================================
+       BMI DISPLAY CARD
+    ============================================================ */
+    .bmi-card {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      padding: 24px;
+      border-radius: var(--radius);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .bmi-card::before {
+      content: '';
+      position: absolute;
+      top: -40px; right: -40px;
+      width: 120px; height: 120px;
+      border-radius: 50%;
+      opacity: .08;
+      background: currentColor;
+    }
+    .bmi-value { font-size: 3rem; font-weight: 700; line-height: 1; }
+    .bmi-label { font-size: .95rem; font-weight: 500; margin-top: 4px; opacity: .8; }
+    .bmi-card-low { background: var(--success-bg); color: var(--success); }
+    .bmi-card-moderate { background: var(--warning-bg); color: var(--warning); }
+    .bmi-card-high { background: var(--error-bg); color: var(--error); }
+
+    /* ============================================================
+       RESULT SECTION
+    ============================================================ */
+    .result-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: .95rem;
+    }
+    .result-row:last-child { border-bottom: none; }
+    .result-row strong { color: var(--text-primary); }
+    .result-row .val { color: var(--primary); font-weight: 600; }
+
+    /* Progress Bar (BMI Scale) */
+    .bmi-scale { margin: 16px 0; }
+    .bmi-scale-bar {
+      height: 10px;
+      border-radius: 5px;
+      background: linear-gradient(to right, #81c784 0%, #81c784 30%, #ffb74d 30%, #ffb74d 60%, #e57373 60%, #e57373 100%);
+      position: relative;
+      margin-bottom: 6px;
+    }
+    .bmi-marker {
+      position: absolute;
+      top: -4px;
+      width: 18px;
+      height: 18px;
+      background: #fff;
+      border: 3px solid var(--primary);
+      border-radius: 50%;
+      transform: translateX(-50%);
+      box-shadow: var(--shadow-sm);
+      transition: left .5s cubic-bezier(.4,0,.2,1);
+    }
+    .bmi-scale-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: .75rem;
+      color: var(--text-secondary);
+    }
+
+    /* ============================================================
+       RECOMMENDATIONS
+    ============================================================ */
+    .rec-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .rec-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: .9rem;
+      line-height: 1.5;
+    }
+    .rec-list li::before {
+      content: "✓";
+      color: var(--primary);
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    /* ============================================================
+       UTILITY
+    ============================================================ */
+    .hidden { display: none !important; }
+    .text-center { text-align: center; }
+    .mt-8 { margin-top: 8px; }
+    .mt-16 { margin-top: 16px; }
+    .mb-16 { margin-bottom: 16px; }
+    .divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+    /* ============================================================
+       FOOTER
+    ============================================================ */
+    .footer {
+      text-align: center;
+      padding: 24px;
+      color: var(--text-secondary);
+      font-size: .8rem;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      margin-top: 24px;
+    }
+    .footer a { color: var(--primary); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<!-- ============================================================
+     APP BAR
+============================================================ -->
+<header class="app-bar">
+  <span class="material-icons icon">health_and_safety</span>
+  <div>
+    <h1>ระบบลงทะเบียนและประเมินความเสี่ยงสุขภาพเบื้องต้น</h1>
+    <small>Patient Health Risk Assessment and Registration System</small>
+  </div>
+</header>
+
+<!-- ============================================================
+     MAIN CONTAINER
+============================================================ -->
+<main class="container">
+
+  <!-- ALERT: INFO -->
+  <div class="alert alert-info mb-16" id="topAlert">
+    <span class="material-icons alert-icon">info</span>
+    <div>กรุณากรอกข้อมูลให้ครบถ้วนและถูกต้อง ระบบจะทำการประเมินความเสี่ยงและออกรายงานผลให้อัตโนมัติ</div>
+  </div>
+
+  <!-- SECTION 1: ข้อมูลส่วนบุคคล -->
+  <div class="paper">
+    <h2 class="section-title">
+      <span class="material-icons">person</span>
+      ข้อมูลส่วนบุคคล
+    </h2>
+
+    <div class="stack">
+      <!-- ชื่อ-นามสกุล & อายุ -->
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label" for="fullName">
+            ชื่อ-นามสกุล <span class="req">*</span>
+          </label>
+          <div class="text-field">
+            <input type="text" id="fullName" placeholder="เช่น นายสมชาย ใจดี" oninput="clearErr('fullName')" />
+          </div>
+          <span class="helper-text" id="err-fullName"></span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="age">
+            อายุ (ปี) <span class="req">*</span>
+          </label>
+          <div class="text-field">
+            <input type="number" id="age" placeholder="เช่น 35" min="1" max="120" oninput="clearErr('age')" />
+          </div>
+          <span class="helper-text" id="err-age"></span>
+        </div>
+      </div>
+
+      <!-- น้ำหนัก & ส่วนสูง -->
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label" for="weight">
+            น้ำหนัก (กิโลกรัม) <span class="req">*</span>
+          </label>
+          <div class="text-field">
+            <input type="number" id="weight" placeholder="เช่น 70" min="10" max="300" step="0.1" oninput="clearErr('weight')" />
+          </div>
+          <span class="helper-text" id="err-weight"></span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="height">
+            ส่วนสูง (เซนติเมตร) <span class="req">*</span>
+          </label>
+          <div class="text-field">
+            <input type="number" id="height" placeholder="เช่น 170" min="50" max="250" step="0.1" oninput="clearErr('height')" />
+          </div>
+          <span class="helper-text" id="err-height"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 2: พฤติกรรมความเสี่ยง -->
+  <div class="paper">
+    <h2 class="section-title">
+      <span class="material-icons">warning_amber</span>
+      พฤติกรรมความเสี่ยง
+    </h2>
+
+    <div class="stack">
+      <!-- การสูบบุหรี่ -->
+      <div class="form-group">
+        <label class="form-label">
+          <span class="material-icons" style="font-size:18px;color:var(--text-secondary)">smoking_rooms</span>
+          พฤติกรรมการสูบบุหรี่ <span class="req">*</span>
+        </label>
+        <div class="radio-group radio-group-row" id="smokingGroup">
+          <label class="radio-label" onclick="selectRadio(this,'smoking','none')">
+            <input type="radio" name="smoking" value="none" /> ไม่สูบบุหรี่
+          </label>
+          <label class="radio-label" onclick="selectRadio(this,'smoking','sometimes')">
+            <input type="radio" name="smoking" value="sometimes" /> สูบเป็นบางครั้ง
+          </label>
+          <label class="radio-label" onclick="selectRadio(this,'smoking','regular')">
+            <input type="radio" name="smoking" value="regular" /> สูบประจำ
+          </label>
+        </div>
+        <span class="helper-text" id="err-smoking"></span>
+      </div>
+
+      <hr class="divider" />
+
+      <!-- โรคประจำตัว -->
+      <div class="form-group">
+        <label class="form-label" for="disease">
+          <span class="material-icons" style="font-size:18px;color:var(--text-secondary)">medical_services</span>
+          กลุ่มโรคประจำตัว <span class="req">*</span>
+        </label>
+        <div class="text-field select-wrap">
+          <select id="disease" onchange="clearErr('disease')">
+            <option value="">-- เลือกกลุ่มโรคประจำตัว --</option>
+            <option value="none">ไม่มีโรคประจำตัว</option>
+            <option value="diabetes">เบาหวาน</option>
+            <option value="hypertension">ความดันโลหิตสูง</option>
+            <option value="heart">โรคหัวใจ</option>
+            <option value="kidney">โรคไต</option>
+            <option value="liver">โรคตับ</option>
+            <option value="asthma">หอบหืด / โรคปอด</option>
+            <option value="cancer">มะเร็ง</option>
+            <option value="other">อื่น ๆ</option>
+          </select>
+        </div>
+        <span class="helper-text" id="err-disease"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 3: ปุ่มดำเนินการ -->
+  <div class="paper">
+    <div class="stack-row" style="justify-content:center; gap:16px;">
+      <button class="btn btn-primary btn-lg" onclick="handleSubmit()">
+        <span class="material-icons">analytics</span>
+        ประเมินผลความเสี่ยง
+      </button>
+      <button class="btn btn-danger btn-lg" onclick="handleReset()">
+        <span class="material-icons">refresh</span>
+        ล้างข้อมูล
+      </button>
+    </div>
+  </div>
+
+  <!-- SECTION 4: ผลการประเมิน (ซ่อนก่อน) -->
+  <div id="resultSection" class="hidden">
+    <div class="paper">
+      <h2 class="section-title">
+        <span class="material-icons">summarize</span>
+        สรุปผลการประเมิน
+      </h2>
+
+      <!-- BMI Card + Scale -->
+      <div class="grid-2" style="align-items:start;">
+        <div id="bmiCard" class="bmi-card">
+          <div class="bmi-value" id="bmiValue">-</div>
+          <div class="bmi-label" id="bmiCategory">-</div>
+        </div>
+
+        <div>
+          <div class="result-row">
+            <span>ชื่อ-นามสกุล</span>
+            <strong id="r-name" class="val">-</strong>
+          </div>
+          <div class="result-row">
+            <span>อายุ</span>
+            <strong id="r-age" class="val">-</strong>
+          </div>
+          <div class="result-row">
+            <span>น้ำหนัก / ส่วนสูง</span>
+            <strong id="r-wh" class="val">-</strong>
+          </div>
+          <div class="result-row">
+            <span>ค่า BMI</span>
+            <strong id="r-bmi" class="val">-</strong>
+          </div>
+          <div class="result-row" style="border:none; padding-top:12px;">
+            <span>ระดับความเสี่ยง</span>
+            <span id="r-chip"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- BMI Scale Bar -->
+      <div class="bmi-scale mt-16">
+        <div class="bmi-scale-bar">
+          <div class="bmi-marker" id="bmiMarker" style="left:0%"></div>
+        </div>
+        <div class="bmi-scale-labels">
+          <span>ต่ำกว่า 18.5</span>
+          <span>18.5 – 22.9 (ปกติ)</span>
+          <span>23 – 27.5 (เกิน)</span>
+          <span>27.5+ (อ้วน)</span>
+        </div>
+      </div>
+
+      <!-- Alert result -->
+      <div id="resultAlert" class="mt-16"></div>
+    </div>
+
+    <!-- Recommendations -->
+    <div class="paper" id="recSection">
+      <h2 class="section-title">
+        <span class="material-icons">recommend</span>
+        คำแนะนำการปฏิบัติตน
+      </h2>
+      <ul class="rec-list" id="recList"></ul>
+    </div>
+
+    <!-- Print button -->
+    <div style="text-align:center; margin-top:8px;">
+      <button class="btn btn-outlined" onclick="window.print()">
+        <span class="material-icons">print</span>
+        พิมพ์รายงาน
+      </button>
+    </div>
+  </div>
+
+</main>
+
+<!-- ============================================================
+     DIALOG / MODAL – สรุปผล
+============================================================ -->
+<div class="dialog-overlay hidden" id="dialogOverlay" onclick="closeDialogOutside(event)">
+  <div class="dialog" id="dialog">
+    <div class="dialog-title" id="dialogTitle">
+      <span class="material-icons" id="dialogIcon">check_circle</span>
+      ผลการประเมิน
+    </div>
+    <div class="dialog-content" id="dialogContent"></div>
+    <div class="dialog-actions">
+      <button class="btn btn-outlined btn-sm" onclick="closeDialog()">
+        <span class="material-icons" style="font-size:18px">close</span>
+        ปิด
+      </button>
+      <button class="btn btn-primary btn-sm" onclick="closeDialog(); scrollToResult()">
+        <span class="material-icons" style="font-size:18px">visibility</span>
+        ดูรายละเอียด
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     FOOTER
+============================================================ -->
+<footer class="footer">
+  <p>ระบบลงทะเบียนและประเมินความเสี่ยงสุขภาพเบื้องต้น &copy; 2567</p>
+  <p class="mt-8">ข้อมูลนี้เป็นเพียงการประเมินเบื้องต้นเท่านั้น ควรปรึกษาแพทย์สำหรับการวินิจฉัยที่แม่นยำ</p>
+</footer>
+
+<!-- ============================================================
+     JAVASCRIPT
+============================================================ -->
+<script>
+/* ----------------------------------------------------------------
+   RADIO HELPER
+---------------------------------------------------------------- */
+function selectRadio(label, name, value) {
+  document.querySelectorAll(`[name="${name}"]`).forEach(r => {
+    r.closest('.radio-label').classList.remove('selected');
+  });
+  label.classList.add('selected');
+  label.querySelector('input').checked = true;
+  clearErr(name);
+}
+
+/* ----------------------------------------------------------------
+   CLEAR ERROR
+---------------------------------------------------------------- */
+function clearErr(id) {
+  const el = document.getElementById(`err-${id}`);
+  if (el) { el.textContent = ''; el.className = 'helper-text'; }
+  const input = document.getElementById(id) || document.querySelector(`[name="${id}"]`);
+  if (input) { input.classList.remove('error'); }
+}
+
+function showErr(id, msg) {
+  const el = document.getElementById(`err-${id}`);
+  if (el) { el.textContent = msg; el.className = 'helper-text error'; }
+  const input = document.getElementById(id);
+  if (input) { input.classList.add('error'); }
+}
+
+/* ----------------------------------------------------------------
+   VALIDATION
+---------------------------------------------------------------- */
+function validate() {
+  let valid = true;
+
+  const fullName = document.getElementById('fullName').value.trim();
+  if (!fullName) { showErr('fullName', 'กรุณากรอกชื่อ-นามสกุล'); valid = false; }
+  else if (!/^[ก-๙a-zA-Z\s.]+$/.test(fullName)) { showErr('fullName', 'กรุณากรอกเฉพาะตัวอักษรภาษาไทยหรืออังกฤษ'); valid = false; }
+
+  const age = parseFloat(document.getElementById('age').value);
+  if (!age) { showErr('age', 'กรุณากรอกอายุ'); valid = false; }
+  else if (isNaN(age) || age < 1 || age > 120) { showErr('age', 'อายุต้องอยู่ระหว่าง 1-120 ปี'); valid = false; }
+
+  const weight = parseFloat(document.getElementById('weight').value);
+  if (!weight) { showErr('weight', 'กรุณากรอกน้ำหนัก'); valid = false; }
+  else if (isNaN(weight) || weight < 10 || weight > 300) { showErr('weight', 'น้ำหนักต้องอยู่ระหว่าง 10-300 กก.'); valid = false; }
+
+  const height = parseFloat(document.getElementById('height').value);
+  if (!height) { showErr('height', 'กรุณากรอกส่วนสูง'); valid = false; }
+  else if (isNaN(height) || height < 50 || height > 250) { showErr('height', 'ส่วนสูงต้องอยู่ระหว่าง 50-250 ซม.'); valid = false; }
+
+  const smoking = document.querySelector('[name="smoking"]:checked');
+  if (!smoking) {
+    document.getElementById('err-smoking').textContent = 'กรุณาเลือกพฤติกรรมการสูบบุหรี่';
+    document.getElementById('err-smoking').className = 'helper-text error';
+    valid = false;
+  }
+
+  const disease = document.getElementById('disease').value;
+  if (!disease) { showErr('disease', 'กรุณาเลือกกลุ่มโรคประจำตัว'); valid = false; }
+
+  return valid;
+}
+
+/* ----------------------------------------------------------------
+   BMI CALCULATION & RISK LOGIC
+---------------------------------------------------------------- */
+function calcBMI(weight, height) {
+  const h = height / 100;
+  return weight / (h * h);
+}
+
+function getBMIRisk(bmi) {
+  if (bmi < 18.5) return { level: 'low', label: 'น้ำหนักต่ำกว่าเกณฑ์', color: 'low' };
+  if (bmi < 23)   return { level: 'low', label: 'น้ำหนักปกติ', color: 'low' };
+  if (bmi < 27.5) return { level: 'moderate', label: 'น้ำหนักเกิน', color: 'moderate' };
+  return { level: 'high', label: 'อ้วน', color: 'high' };
+}
+
+function getOverallRisk(bmiRisk, smoking, disease) {
+  let score = 0;
+  if (bmiRisk.level === 'moderate') score += 1;
+  if (bmiRisk.level === 'high') score += 2;
+  if (smoking === 'sometimes') score += 1;
+  if (smoking === 'regular') score += 2;
+  if (['heart','cancer','kidney'].includes(disease)) score += 2;
+  else if (['diabetes','hypertension','liver','asthma'].includes(disease)) score += 1;
+
+  if (score <= 1) return 'low';
+  if (score <= 3) return 'moderate';
+  return 'high';
+}
+
+const riskMeta = {
+  low: {
+    chip: `<span class="chip chip-low"><span class="material-icons">check_circle</span> ความเสี่ยงต่ำ (Low Risk)</span>`,
+    alertClass: 'alert-success',
+    alertIcon: 'check_circle',
+    alertMsg: 'ผลประเมินอยู่ในเกณฑ์ <strong>ความเสี่ยงต่ำ</strong> ขอแสดงความยินดี! ท่านมีสุขภาพอยู่ในเกณฑ์ดี',
+    dialogIcon: 'check_circle',
+    dialogColor: '#2e7d32',
+  },
+  moderate: {
+    chip: `<span class="chip chip-moderate"><span class="material-icons">warning</span> ความเสี่ยงปานกลาง (Moderate Risk)</span>`,
+    alertClass: 'alert-warning',
+    alertIcon: 'warning',
+    alertMsg: 'ผลประเมินอยู่ในเกณฑ์ <strong>ความเสี่ยงปานกลาง</strong> ควรปรับพฤติกรรมและเฝ้าระวังสุขภาพอย่างสม่ำเสมอ',
+    dialogIcon: 'warning',
+    dialogColor: '#e65100',
+  },
+  high: {
+    chip: `<span class="chip chip-high"><span class="material-icons">dangerous</span> ความเสี่ยงสูง (High Risk)</span>`,
+    alertClass: 'alert-error',
+    alertIcon: 'dangerous',
+    alertMsg: 'ผลประเมินอยู่ในเกณฑ์ <strong>ความเสี่ยงสูง</strong> ท่านควรพบแพทย์เพื่อรับการตรวจและวินิจฉัยโดยเร่งด่วน',
+    dialogIcon: 'dangerous',
+    dialogColor: '#c62828',
+  }
+};
+
+/* ----------------------------------------------------------------
+   RECOMMENDATIONS
+---------------------------------------------------------------- */
+function getRecommendations(bmi, risk, smoking, disease) {
+  const recs = [];
+
+  if (bmi < 18.5) {
+    recs.push('เพิ่มปริมาณอาหารที่มีประโยชน์ โดยเน้นโปรตีนและคาร์โบไฮเดรตเชิงซ้อน');
+    recs.push('ออกกำลังกายเพื่อเสริมสร้างกล้ามเนื้อ เช่น ยกน้ำหนักเบาๆ หรือโยคะ');
+  } else if (bmi >= 23) {
+    recs.push('ควบคุมปริมาณอาหาร ลดอาหารที่มีไขมันและน้ำตาลสูง');
+    recs.push('ออกกำลังกายอย่างน้อย 150 นาทีต่อสัปดาห์');
+  } else {
+    recs.push('รักษาน้ำหนักให้อยู่ในเกณฑ์ปกติโดยรับประทานอาหารที่สมดุล');
+  }
+
+  if (smoking === 'regular' || smoking === 'sometimes') {
+    recs.push('ลดหรือเลิกสูบบุหรี่ ซึ่งเป็นปัจจัยเสี่ยงสำคัญของโรคหัวใจและมะเร็ง');
+    recs.push('ขอรับคำปรึกษาจากแพทย์เพื่อรับโปรแกรมช่วยเลิกบุหรี่');
+  }
+
+  if (disease === 'diabetes') {
+    recs.push('ติดตามระดับน้ำตาลในเลือดสม่ำเสมอ และรับประทานยาตามแพทย์สั่ง');
+    recs.push('หลีกเลี่ยงอาหารที่มีน้ำตาลและแป้งขัดขาวสูง');
+  }
+  if (disease === 'hypertension') {
+    recs.push('ลดการบริโภคเกลือโซเดียม ไม่เกิน 2,000 มก.ต่อวัน');
+    recs.push('วัดความดันโลหิตเป็นประจำ และรับประทานยาตามแพทย์กำหนด');
+  }
+  if (disease === 'heart') {
+    recs.push('หลีกเลี่ยงการออกกำลังกายหนักโดยไม่ปรึกษาแพทย์ก่อน');
+    recs.push('ติดตามอาการอย่างใกล้ชิดและพบแพทย์ตามนัดสม่ำเสมอ');
+  }
+
+  if (risk === 'high') {
+    recs.push('นัดพบแพทย์เพื่อรับการตรวจสุขภาพและวางแผนการรักษาโดยเร็วที่สุด');
+  }
+
+  recs.push('พักผ่อนให้เพียงพออย่างน้อย 7-8 ชั่วโมงต่อคืน');
+  recs.push('ดื่มน้ำสะอาดอย่างน้อย 8 แก้วต่อวัน');
+
+  return recs;
+}
+
+/* ----------------------------------------------------------------
+   SUBMIT HANDLER
+---------------------------------------------------------------- */
+function handleSubmit() {
+  if (!validate()) {
+    document.querySelector('.paper').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
+
+  const fullName = document.getElementById('fullName').value.trim();
+  const age = parseFloat(document.getElementById('age').value);
+  const weight = parseFloat(document.getElementById('weight').value);
+  const height = parseFloat(document.getElementById('height').value);
+  const smoking = document.querySelector('[name="smoking"]:checked').value;
+  const disease = document.getElementById('disease').value;
+
+  const bmi = calcBMI(weight, height);
+  const bmiRisk = getBMIRisk(bmi);
+  const overallRisk = getOverallRisk(bmiRisk, smoking, disease);
+  const meta = riskMeta[overallRisk];
+
+  /* Fill result panel */
+  document.getElementById('r-name').textContent = fullName;
+  document.getElementById('r-age').textContent = age + ' ปี';
+  document.getElementById('r-wh').textContent = `${weight} กก. / ${height} ซม.`;
+  document.getElementById('r-bmi').textContent = bmi.toFixed(2);
+  document.getElementById('r-chip').innerHTML = meta.chip;
+
+  /* BMI Card */
+  const card = document.getElementById('bmiCard');
+  card.className = `bmi-card bmi-card-${bmiRisk.color}`;
+  document.getElementById('bmiValue').textContent = bmi.toFixed(1);
+  document.getElementById('bmiCategory').textContent = bmiRisk.label;
+
+  /* BMI Marker position (map 10-40 -> 0-100%) */
+  const pct = Math.min(100, Math.max(0, ((bmi - 10) / 30) * 100));
+  document.getElementById('bmiMarker').style.left = pct + '%';
+
+  /* Result Alert */
+  document.getElementById('resultAlert').innerHTML = `
+    <div class="alert ${meta.alertClass}">
+      <span class="material-icons alert-icon">${meta.alertIcon}</span>
+      <div>${meta.alertMsg}</div>
+    </div>`;
+
+  /* Recommendations */
+  const recs = getRecommendations(bmi, overallRisk, smoking, disease);
+  document.getElementById('recList').innerHTML = recs.map(r => `<li>${r}</li>`).join('');
+
+  /* Show result section */
+  document.getElementById('resultSection').classList.remove('hidden');
+
+  /* Show Dialog */
+  const diseaseName = {
+    none:'ไม่มีโรคประจำตัว', diabetes:'เบาหวาน', hypertension:'ความดันโลหิตสูง',
+    heart:'โรคหัวใจ', kidney:'โรคไต', liver:'โรคตับ', asthma:'หอบหืด/โรคปอด',
+    cancer:'มะเร็ง', other:'อื่นๆ'
+  };
+  const smokingName = { none:'ไม่สูบบุหรี่', sometimes:'สูบเป็นบางครั้ง', regular:'สูบประจำ' };
+
+  document.getElementById('dialogIcon').textContent = meta.dialogIcon;
+  document.getElementById('dialogIcon').style.color = meta.dialogColor;
+  document.getElementById('dialogContent').innerHTML = `
+    <div style="margin-bottom:12px;">${meta.chip}</div>
+    <div class="result-row"><span>ค่า BMI</span><strong class="val">${bmi.toFixed(2)} (${bmiRisk.label})</strong></div>
+    <div class="result-row"><span>พฤติกรรมสูบบุหรี่</span><strong class="val">${smokingName[smoking]}</strong></div>
+    <div class="result-row"><span>โรคประจำตัว</span><strong class="val">${diseaseName[disease] || disease}</strong></div>
+    <div class="mt-16">
+      <div class="alert ${meta.alertClass}">
+        <span class="material-icons alert-icon" style="font-size:18px">${meta.alertIcon}</span>
+        <div style="font-size:.88rem">${meta.alertMsg}</div>
+      </div>
+    </div>`;
+
+  document.getElementById('dialogOverlay').classList.remove('hidden');
+}
+
+/* ----------------------------------------------------------------
+   RESET HANDLER
+---------------------------------------------------------------- */
+function handleReset() {
+  document.getElementById('fullName').value = '';
+  document.getElementById('age').value = '';
+  document.getElementById('weight').value = '';
+  document.getElementById('height').value = '';
+  document.getElementById('disease').value = '';
+  document.querySelectorAll('[name="smoking"]').forEach(r => {
+    r.checked = false;
+    r.closest('.radio-label').classList.remove('selected');
+  });
+  ['fullName','age','weight','height','smoking','disease'].forEach(id => clearErr(id));
+  document.getElementById('resultSection').classList.add('hidden');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ----------------------------------------------------------------
+   DIALOG HELPERS
+---------------------------------------------------------------- */
+function closeDialog() { document.getElementById('dialogOverlay').classList.add('hidden'); }
+function closeDialogOutside(e) { if (e.target.id === 'dialogOverlay') closeDialog(); }
+function scrollToResult() {
+  setTimeout(() => {
+    document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 100);
+}
+</script>
+
+</body>
+</html>
